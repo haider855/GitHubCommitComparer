@@ -1,13 +1,27 @@
 import { useState } from "react";
 import { CommitForm } from "./components/CommitForm";
+import { ErrorMessage } from "./components/ErrorMessage";
+import type { AppError, ParsedGitHubInput } from "./types/app";
+import { parseGitHubInput } from "./utils/parseGitHubInput";
 import "./App.css";
 
 function App() {
   const [repoInput, setRepoInput] = useState("");
   const [commitInput, setCommitInput] = useState("");
+  const [error, setError] = useState<AppError | null>(null);
+  const [parsedInput, setParsedInput] = useState<ParsedGitHubInput | null>(null);
 
   function handleAnalyzeCommit() {
-    return;
+    const result = parseGitHubInput(repoInput, commitInput);
+
+    if (!result.ok) {
+      setError(result.error);
+      setParsedInput(null);
+      return;
+    }
+
+    setError(null);
+    setParsedInput(result.value);
   }
 
   return (
@@ -37,6 +51,28 @@ function App() {
           onCommitInputChange={setCommitInput}
           onSubmit={handleAnalyzeCommit}
         />
+
+        {error ? <ErrorMessage error={error} /> : null}
+
+        {parsedInput ? (
+          <div className="feedback-panel success-panel" aria-live="polite">
+            <h3>Input parsed successfully</h3>
+            <dl className="parsed-details">
+              <div>
+                <dt>Owner</dt>
+                <dd>{parsedInput.owner}</dd>
+              </div>
+              <div>
+                <dt>Repository</dt>
+                <dd>{parsedInput.repo}</dd>
+              </div>
+              <div>
+                <dt>Commit SHA</dt>
+                <dd>{parsedInput.commitSha}</dd>
+              </div>
+            </dl>
+          </div>
+        ) : null}
       </section>
 
       <section className="results-grid" aria-label="Result preview sections">

@@ -118,6 +118,69 @@ button {
   padding: 0 18px;
 }
 
+.feedback-panel {
+  margin-top: 18px;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.feedback-panel h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.feedback-panel p {
+  margin-bottom: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.error-panel {
+  border-color: #7f1d1d;
+  background: #2f1116;
+}
+
+.error-panel h3 {
+  color: #fecaca;
+}
+
+.success-panel {
+  border-color: #14532d;
+  background: #0f2a1c;
+}
+
+.success-panel h3 {
+  color: #bbf7d0;
+}
+
+.parsed-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
+.parsed-details div {
+  min-width: 0;
+}
+
+.parsed-details dt {
+  margin-bottom: 4px;
+  color: #86efac;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.parsed-details dd {
+  margin: 0;
+  color: #f8fafc;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+
 .results-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -142,6 +205,7 @@ button {
   }
 
   .commit-form,
+  .parsed-details,
   .results-grid {
     grid-template-columns: 1fr;
   }
