@@ -126,7 +126,11 @@ function App() {
         {error ? <ErrorMessage error={error} /> : null}
 
         {analysisResult ? (
-          <CommitOverview commit={analysisResult.commitData} />
+          <CommitOverview
+            commit={analysisResult.commitData}
+            compare={analysisResult.compareData}
+            parentSha={analysisResult.parentSha}
+          />
         ) : null}
       </section>
 

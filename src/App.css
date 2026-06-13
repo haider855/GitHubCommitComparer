@@ -251,6 +251,25 @@ button {
   overflow-wrap: anywhere;
 }
 
+.commit-link {
+  color: #67e8f9;
+  font-family: inherit;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.commit-link:hover {
+  text-decoration: underline;
+}
+
+.commit-details .additions-count {
+  color: #86efac;
+}
+
+.commit-details .deletions-count {
+  color: #fca5a5;
+}
+
 .results-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
