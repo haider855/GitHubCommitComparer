@@ -8,11 +8,16 @@ import {
   getCommit,
   GitHubApiError,
 } from "./services/githubApi";
-import type { AppError, ParsedGitHubInput } from "./types/app";
+import type {
+  AppError,
+  ClassifiedChangedFile,
+  ParsedGitHubInput,
+} from "./types/app";
 import type {
   GitHubCommitResponse,
   GitHubCompareResponse,
 } from "./types/github";
+import { classifyFile } from "./utils/classifyFile";
 import { parseGitHubInput } from "./utils/parseGitHubInput";
 import "./App.css";
 
@@ -20,6 +25,7 @@ interface AnalysisResult {
   parsedInput: ParsedGitHubInput;
   commitData: GitHubCommitResponse;
   compareData: GitHubCompareResponse;
+  classifiedFiles: ClassifiedChangedFile[];
   parentSha: string;
 }
 
@@ -77,11 +83,16 @@ function App() {
         parentSha,
         commitData.sha,
       );
+      const classifiedFiles = (compareData.files ?? []).map((file) => ({
+        ...file,
+        category: classifyFile(file.filename),
+      }));
 
       setAnalysisResult({
         parsedInput: result.value,
         commitData,
         compareData,
+        classifiedFiles,
         parentSha,
       });
     } catch (caughtError) {
