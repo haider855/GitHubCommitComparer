@@ -4,7 +4,7 @@ interface CommitFormProps {
   isLoading: boolean;
   onRepoInputChange: (value: string) => void;
   onCommitInputChange: (value: string) => void;
-  onSubmit: () => void;
+  onSubmit: () => void | Promise<void>;
 }
 
 export function CommitForm({
@@ -20,7 +20,7 @@ export function CommitForm({
       className="commit-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit();
+        void onSubmit();
       }}
     >
       <label htmlFor="repository-url">
@@ -52,7 +52,7 @@ export function CommitForm({
       </label>
 
       <button type="submit" disabled={isLoading}>
-        Analyze Commit
+        {isLoading ? "Analyzing..." : "Analyze Commit"}
       </button>
     </form>
   );

@@ -154,9 +154,18 @@ button {
   color: #bbf7d0;
 }
 
+.loading-panel {
+  border-color: #155e75;
+  background: #0f2633;
+}
+
+.loading-panel h3 {
+  color: #a5f3fc;
+}
+
 .parsed-details {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
   margin: 14px 0 0;
 }

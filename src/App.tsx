@@ -1,27 +1,93 @@
 import { useState } from "react";
 import { CommitForm } from "./components/CommitForm";
 import { ErrorMessage } from "./components/ErrorMessage";
+import { LoadingState } from "./components/LoadingState";
+import {
+  compareCommits,
+  getCommit,
+  GitHubApiError,
+} from "./services/githubApi";
 import type { AppError, ParsedGitHubInput } from "./types/app";
+import type {
+  GitHubCommitResponse,
+  GitHubCompareResponse,
+} from "./types/github";
 import { parseGitHubInput } from "./utils/parseGitHubInput";
 import "./App.css";
+
+interface AnalysisResult {
+  parsedInput: ParsedGitHubInput;
+  commitData: GitHubCommitResponse;
+  compareData: GitHubCompareResponse;
+  parentSha: string;
+}
 
 function App() {
   const [repoInput, setRepoInput] = useState("");
   const [commitInput, setCommitInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
-  const [parsedInput, setParsedInput] = useState<ParsedGitHubInput | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null,
+  );
 
-  function handleAnalyzeCommit() {
+  async function handleAnalyzeCommit() {
     const result = parseGitHubInput(repoInput, commitInput);
 
     if (!result.ok) {
       setError(result.error);
-      setParsedInput(null);
+      setAnalysisResult(null);
       return;
     }
 
     setError(null);
-    setParsedInput(result.value);
+    setAnalysisResult(null);
+    setIsLoading(true);
+
+    try {
+      const commitData = await getCommit(
+        result.value.owner,
+        result.value.repo,
+        result.value.commitSha,
+      );
+
+      if (commitData.parents.length === 0) {
+        setError({
+          title: "Root commit not supported",
+          message:
+            "This commit has no parent commit. There is no previous commit to compare against.",
+        });
+        return;
+      }
+
+      if (commitData.parents.length > 1) {
+        setError({
+          title: "Merge commit not supported",
+          message:
+            "This commit has multiple parent commits. Merge commit comparison is not supported in the MVP.",
+        });
+        return;
+      }
+
+      const parentSha = commitData.parents[0].sha;
+      const compareData = await compareCommits(
+        result.value.owner,
+        result.value.repo,
+        parentSha,
+        commitData.sha,
+      );
+
+      setAnalysisResult({
+        parsedInput: result.value,
+        commitData,
+        compareData,
+        parentSha,
+      });
+    } catch (caughtError) {
+      setError(toAppError(caughtError));
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -40,35 +106,47 @@ function App() {
       <section className="tool-panel" aria-labelledby="form-title">
         <div className="section-heading">
           <h2 id="form-title">Analyze a Commit</h2>
-          <p>Input parsing and GitHub API fetching will be added next.</p>
+          <p>Fetch a public commit and compare it against its direct parent.</p>
         </div>
 
         <CommitForm
           repoInput={repoInput}
           commitInput={commitInput}
-          isLoading={false}
+          isLoading={isLoading}
           onRepoInputChange={setRepoInput}
           onCommitInputChange={setCommitInput}
           onSubmit={handleAnalyzeCommit}
         />
 
+        {isLoading ? (
+          <LoadingState message="Fetching commit and parent comparison from GitHub." />
+        ) : null}
+
         {error ? <ErrorMessage error={error} /> : null}
 
-        {parsedInput ? (
+        {analysisResult ? (
           <div className="feedback-panel success-panel" aria-live="polite">
-            <h3>Input parsed successfully</h3>
+            <h3>GitHub comparison loaded</h3>
             <dl className="parsed-details">
               <div>
                 <dt>Owner</dt>
-                <dd>{parsedInput.owner}</dd>
+                <dd>{analysisResult.parsedInput.owner}</dd>
               </div>
               <div>
                 <dt>Repository</dt>
-                <dd>{parsedInput.repo}</dd>
+                <dd>{analysisResult.parsedInput.repo}</dd>
+              </div>
+              <div>
+                <dt>Parent SHA</dt>
+                <dd>{analysisResult.parentSha}</dd>
               </div>
               <div>
                 <dt>Commit SHA</dt>
-                <dd>{parsedInput.commitSha}</dd>
+                <dd>{analysisResult.commitData.sha}</dd>
+              </div>
+              <div>
+                <dt>Files returned</dt>
+                <dd>{analysisResult.compareData.files?.length ?? 0}</dd>
               </div>
             </dl>
           </div>
@@ -93,6 +171,20 @@ function App() {
       </section>
     </main>
   );
+}
+
+function toAppError(error: unknown): AppError {
+  if (error instanceof GitHubApiError) {
+    return {
+      title: error.title,
+      message: error.userMessage,
+    };
+  }
+
+  return {
+    title: "Unexpected error",
+    message: "Something went wrong while fetching this commit.",
+  };
 }
 
 export default App;
