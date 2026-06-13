@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CommitForm } from "./components/CommitForm";
+import { CommitOverview } from "./components/CommitOverview";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { LoadingState } from "./components/LoadingState";
 import {
@@ -125,31 +126,7 @@ function App() {
         {error ? <ErrorMessage error={error} /> : null}
 
         {analysisResult ? (
-          <div className="feedback-panel success-panel" aria-live="polite">
-            <h3>GitHub comparison loaded</h3>
-            <dl className="parsed-details">
-              <div>
-                <dt>Owner</dt>
-                <dd>{analysisResult.parsedInput.owner}</dd>
-              </div>
-              <div>
-                <dt>Repository</dt>
-                <dd>{analysisResult.parsedInput.repo}</dd>
-              </div>
-              <div>
-                <dt>Parent SHA</dt>
-                <dd>{analysisResult.parentSha}</dd>
-              </div>
-              <div>
-                <dt>Commit SHA</dt>
-                <dd>{analysisResult.commitData.sha}</dd>
-              </div>
-              <div>
-                <dt>Files returned</dt>
-                <dd>{analysisResult.compareData.files?.length ?? 0}</dd>
-              </div>
-            </dl>
-          </div>
+          <CommitOverview commit={analysisResult.commitData} />
         ) : null}
       </section>
 

@@ -190,6 +190,67 @@ button {
   overflow-wrap: anywhere;
 }
 
+.commit-overview {
+  margin-top: 24px;
+  border-top: 1px solid #263244;
+  padding-top: 24px;
+}
+
+.commit-message {
+  margin-bottom: 18px;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 18px;
+}
+
+.commit-message span {
+  display: block;
+  margin-bottom: 8px;
+  color: #67e8f9;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.commit-message p {
+  margin-bottom: 0;
+  color: #f8fafc;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.commit-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.commit-details div {
+  min-width: 0;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 16px;
+}
+
+.commit-details dt {
+  margin-bottom: 6px;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.commit-details dd {
+  margin: 0;
+  color: #f8fafc;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+
 .results-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
