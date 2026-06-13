@@ -270,6 +270,22 @@ button {
   color: #fca5a5;
 }
 
+.rule-summary {
+  margin-top: 24px;
+  border-top: 1px solid #263244;
+  padding-top: 24px;
+}
+
+.rule-summary > p {
+  margin: 0;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #dbeafe;
+  line-height: 1.7;
+  padding: 18px;
+}
+
 .category-summary {
   margin-top: 24px;
   border-top: 1px solid #263244;

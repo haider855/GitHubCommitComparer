@@ -4,6 +4,7 @@ import { CommitOverview } from "./components/CommitOverview";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { FileCategorySummary } from "./components/FileCategorySummary";
 import { LoadingState } from "./components/LoadingState";
+import { RuleBasedSummary } from "./components/RuleBasedSummary";
 import {
   compareCommits,
   getCommit,
@@ -21,6 +22,7 @@ import type {
 import { classifyFile } from "./utils/classifyFile";
 import { countFileCategories } from "./utils/countFileCategories";
 import { parseGitHubInput } from "./utils/parseGitHubInput";
+import { summarizeCommit } from "./utils/summarizeCommit";
 import "./App.css";
 
 interface AnalysisResult {
@@ -46,6 +48,17 @@ function App() {
         : null,
     [analysisResult],
   );
+  const summaryText = useMemo(() => {
+    if (!analysisResult || !categoryCounts) {
+      return null;
+    }
+
+    return summarizeCommit({
+      commitMessage: analysisResult.commitData.commit.message,
+      files: analysisResult.classifiedFiles,
+      categoryCounts,
+    });
+  }, [analysisResult, categoryCounts]);
 
   async function handleAnalyzeCommit() {
     const result = parseGitHubInput(repoInput, commitInput);
@@ -152,6 +165,7 @@ function App() {
               compare={analysisResult.compareData}
               parentSha={analysisResult.parentSha}
             />
+            {summaryText ? <RuleBasedSummary summaryText={summaryText} /> : null}
             {categoryCounts ? (
               <FileCategorySummary categoryCounts={categoryCounts} />
             ) : null}
