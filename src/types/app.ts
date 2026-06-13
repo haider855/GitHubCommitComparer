@@ -1,15 +1,20 @@
 import type { GitHubCompareFile } from "./github";
 
-export type FileCategory =
-  | "UI"
-  | "Logic"
-  | "Config"
-  | "Dependencies"
-  | "Documentation"
-  | "Tests"
-  | "Assets"
-  | "Build/Tooling"
-  | "Other";
+export const FILE_CATEGORIES = [
+  "UI",
+  "Logic",
+  "Config",
+  "Dependencies",
+  "Documentation",
+  "Tests",
+  "Assets",
+  "Build/Tooling",
+  "Other",
+] as const;
+
+export type FileCategory = (typeof FILE_CATEGORIES)[number];
+
+export type CategoryCounts = Record<FileCategory, number>;
 
 export interface ParsedGitHubInput {
   owner: string;

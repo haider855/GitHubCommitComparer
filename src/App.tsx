@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CommitForm } from "./components/CommitForm";
 import { CommitOverview } from "./components/CommitOverview";
 import { ErrorMessage } from "./components/ErrorMessage";
+import { FileCategorySummary } from "./components/FileCategorySummary";
 import { LoadingState } from "./components/LoadingState";
 import {
   compareCommits,
@@ -18,6 +19,7 @@ import type {
   GitHubCompareResponse,
 } from "./types/github";
 import { classifyFile } from "./utils/classifyFile";
+import { countFileCategories } from "./utils/countFileCategories";
 import { parseGitHubInput } from "./utils/parseGitHubInput";
 import "./App.css";
 
@@ -36,6 +38,13 @@ function App() {
   const [error, setError] = useState<AppError | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
+  );
+  const categoryCounts = useMemo(
+    () =>
+      analysisResult
+        ? countFileCategories(analysisResult.classifiedFiles)
+        : null,
+    [analysisResult],
   );
 
   async function handleAnalyzeCommit() {
@@ -137,11 +146,16 @@ function App() {
         {error ? <ErrorMessage error={error} /> : null}
 
         {analysisResult ? (
-          <CommitOverview
-            commit={analysisResult.commitData}
-            compare={analysisResult.compareData}
-            parentSha={analysisResult.parentSha}
-          />
+          <>
+            <CommitOverview
+              commit={analysisResult.commitData}
+              compare={analysisResult.compareData}
+              parentSha={analysisResult.parentSha}
+            />
+            {categoryCounts ? (
+              <FileCategorySummary categoryCounts={categoryCounts} />
+            ) : null}
+          </>
         ) : null}
       </section>
 
