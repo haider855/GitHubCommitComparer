@@ -99,7 +99,9 @@ function App() {
         result.value.commitSha,
       );
 
-      if (commitData.parents.length === 0) {
+      const parents = commitData.parents ?? [];
+
+      if (parents.length === 0) {
         setError({
           title: "Root commit not supported",
           message:
@@ -108,7 +110,7 @@ function App() {
         return;
       }
 
-      if (commitData.parents.length > 1) {
+      if (parents.length > 1) {
         setError({
           title: "Merge commit not supported",
           message:
@@ -117,14 +119,24 @@ function App() {
         return;
       }
 
-      const parentSha = commitData.parents[0].sha;
+      const parentSha = parents[0].sha;
       const compareData = await compareCommits(
         result.value.owner,
         result.value.repo,
         parentSha,
         commitData.sha,
       );
-      const classifiedFiles = (compareData.files ?? []).map((file) => ({
+      const changedFiles = compareData.files ?? [];
+
+      if (changedFiles.length === 0) {
+        setError({
+          title: "No changed files returned",
+          message: "No changed files were returned for this commit.",
+        });
+        return;
+      }
+
+      const classifiedFiles = changedFiles.map((file) => ({
         ...file,
         category: classifyFile(file.filename),
       }));

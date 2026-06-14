@@ -29,6 +29,12 @@ export async function getCommit(
 ): Promise<GitHubCommitResponse> {
   return requestGitHub<GitHubCommitResponse>(
     `/repos/${encodePathPart(owner)}/${encodePathPart(repo)}/commits/${encodePathPart(ref)}`,
+    {
+      notFoundMessage:
+        "GitHub could not find this commit in the selected repository. Confirm the repository is public and the commit exists.",
+      validationMessage:
+        "GitHub could not validate this commit reference. Check the repository and commit input.",
+    },
   );
 }
 
@@ -40,10 +46,24 @@ export async function compareCommits(
 ): Promise<GitHubCompareResponse> {
   return requestGitHub<GitHubCompareResponse>(
     `/repos/${encodePathPart(owner)}/${encodePathPart(repo)}/compare/${encodePathPart(baseSha)}...${encodePathPart(headSha)}`,
+    {
+      notFoundMessage:
+        "GitHub could not find one of the commits needed for this comparison.",
+      validationMessage:
+        "GitHub could not validate this parent commit comparison.",
+    },
   );
 }
 
-async function requestGitHub<TResponse>(path: string): Promise<TResponse> {
+interface GitHubErrorMessages {
+  notFoundMessage: string;
+  validationMessage: string;
+}
+
+async function requestGitHub<TResponse>(
+  path: string,
+  errorMessages: GitHubErrorMessages,
+): Promise<TResponse> {
   let response: Response;
 
   try {
@@ -59,7 +79,7 @@ async function requestGitHub<TResponse>(path: string): Promise<TResponse> {
   }
 
   if (!response.ok) {
-    throw createGitHubApiError(response.status);
+    throw await createGitHubApiError(response, errorMessages);
   }
 
   return response.json() as Promise<TResponse>;
@@ -69,7 +89,13 @@ function encodePathPart(value: string): string {
   return encodeURIComponent(value.trim());
 }
 
-function createGitHubApiError(status: number): GitHubApiError {
+async function createGitHubApiError(
+  response: Response,
+  errorMessages: GitHubErrorMessages,
+): Promise<GitHubApiError> {
+  const { status } = response;
+  const gitHubMessage = await readGitHubErrorMessage(response);
+
   if (status === 400) {
     return new GitHubApiError(
       status,
@@ -79,10 +105,28 @@ function createGitHubApiError(status: number): GitHubApiError {
   }
 
   if (status === 403) {
+    const remainingRequests = response.headers.get("x-ratelimit-remaining");
+
+    if (remainingRequests === "0" || isRateLimitMessage(gitHubMessage)) {
+      return new GitHubApiError(
+        status,
+        "GitHub API rate limit reached",
+        "GitHub API rate limit reached. Try again later.",
+      );
+    }
+
     return new GitHubApiError(
       status,
-      "GitHub API limit reached",
-      "GitHub API rate limit reached. Try again later.",
+      "GitHub request forbidden",
+      "GitHub refused this request. The repository may be unavailable, blocked, or temporarily restricted.",
+    );
+  }
+
+  if (status === 401) {
+    return new GitHubApiError(
+      status,
+      "GitHub request unauthorized",
+      "GitHub refused this unauthenticated request. Only public repositories are supported in the MVP.",
     );
   }
 
@@ -90,7 +134,7 @@ function createGitHubApiError(status: number): GitHubApiError {
     return new GitHubApiError(
       status,
       "Repository or commit not found",
-      "GitHub could not find this repository or commit. Confirm the repository is public and the commit exists.",
+      errorMessages.notFoundMessage,
     );
   }
 
@@ -106,7 +150,7 @@ function createGitHubApiError(status: number): GitHubApiError {
     return new GitHubApiError(
       status,
       "Validation failed",
-      "GitHub could not validate this commit comparison.",
+      errorMessages.validationMessage,
     );
   }
 
@@ -131,4 +175,17 @@ function createGitHubApiError(status: number): GitHubApiError {
     "GitHub request failed",
     "GitHub could not complete this request. Try again later.",
   );
+}
+
+async function readGitHubErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { message?: unknown };
+    return typeof body.message === "string" ? body.message : "";
+  } catch {
+    return "";
+  }
+}
+
+function isRateLimitMessage(message: string): boolean {
+  return message.toLowerCase().includes("rate limit");
 }
