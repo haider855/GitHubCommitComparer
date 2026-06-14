@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ChangedFileList } from "./components/ChangedFileList";
 import { CommitForm } from "./components/CommitForm";
 import { CommitOverview } from "./components/CommitOverview";
 import { ErrorMessage } from "./components/ErrorMessage";
@@ -169,6 +170,7 @@ function App() {
             {categoryCounts ? (
               <FileCategorySummary categoryCounts={categoryCounts} />
             ) : null}
+            <ChangedFileList files={analysisResult.classifiedFiles} />
           </>
         ) : null}
       </section>

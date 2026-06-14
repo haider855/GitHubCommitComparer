@@ -334,6 +334,92 @@ button {
   color: #f8fafc;
 }
 
+.changed-files {
+  margin-top: 24px;
+  border-top: 1px solid #263244;
+  padding-top: 24px;
+}
+
+.changed-file-list {
+  display: grid;
+  gap: 14px;
+}
+
+.changed-file-card {
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #0f172a;
+  padding: 18px;
+}
+
+.changed-file-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.changed-file-title {
+  min-width: 0;
+}
+
+.changed-file-title h3 {
+  margin: 0 0 8px;
+  color: #f8fafc;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.changed-file-title p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.changed-file-title span {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.diff-toggle {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.diff-preview {
+  max-height: 520px;
+  overflow: auto;
+  margin: 18px 0 0;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #020617;
+  color: #dbeafe;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  padding: 16px;
+  white-space: pre;
+}
+
+.diff-empty {
+  margin: 18px 0 0;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #111827;
+  color: #94a3b8;
+  padding: 14px;
+}
+
 .results-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -359,8 +445,17 @@ button {
 
   .commit-form,
   .parsed-details,
+  .changed-file-header,
   .results-grid {
     grid-template-columns: 1fr;
+  }
+
+  .changed-file-header {
+    display: grid;
+  }
+
+  .diff-toggle {
+    width: 100%;
   }
 
   button {
