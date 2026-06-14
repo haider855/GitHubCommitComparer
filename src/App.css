@@ -372,14 +372,21 @@ button {
   overflow-wrap: anywhere;
 }
 
-.changed-file-title p {
+.previous-filename {
+  margin: 0 0 10px;
+  color: #94a3b8;
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.changed-file-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin: 0;
 }
 
-.changed-file-title span {
+.changed-file-badges span {
   border: 1px solid #334155;
   border-radius: 999px;
   color: #cbd5e1;
@@ -395,6 +402,44 @@ button {
   padding: 0 12px;
 }
 
+.changed-file-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.changed-file-stats div {
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #111827;
+  padding: 12px;
+}
+
+.changed-file-stats dt {
+  margin-bottom: 6px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.changed-file-stats dd {
+  margin: 0;
+  color: #f8fafc;
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-weight: 800;
+}
+
+.changed-file-stats .additions-count {
+  color: #86efac;
+}
+
+.changed-file-stats .deletions-count {
+  color: #fca5a5;
+}
+
 .diff-preview {
   max-height: 520px;
   overflow: auto;
@@ -408,7 +453,44 @@ button {
   font-size: 0.82rem;
   line-height: 1.6;
   padding: 16px;
+}
+
+.diff-preview pre {
+  margin: 0;
   white-space: pre;
+}
+
+.diff-line {
+  display: block;
+  min-width: max-content;
+}
+
+.diff-line-addition {
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.diff-line-deletion {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+}
+
+.diff-line-hunk {
+  background: rgba(14, 165, 233, 0.16);
+  color: #bae6fd;
+  font-weight: 800;
+}
+
+.diff-line-context {
+  color: #cbd5e1;
+}
+
+.diff-truncated {
+  margin: 14px 0 0;
+  border-top: 1px solid #263244;
+  color: #fcd34d;
+  font-weight: 800;
+  padding-top: 12px;
 }
 
 .diff-empty {
@@ -446,6 +528,7 @@ button {
   .commit-form,
   .parsed-details,
   .changed-file-header,
+  .changed-file-stats,
   .results-grid {
     grid-template-columns: 1fr;
   }

@@ -15,7 +15,10 @@ export function ChangedFileCard({ file }: ChangedFileCardProps) {
       <div className="changed-file-header">
         <div className="changed-file-title">
           <h3>{file.filename}</h3>
-          <p>
+          {file.previous_filename ? (
+            <p className="previous-filename">Renamed from {file.previous_filename}</p>
+          ) : null}
+          <p className="changed-file-badges">
             <span>{file.status}</span>
             <span>{file.category}</span>
           </p>
@@ -30,6 +33,21 @@ export function ChangedFileCard({ file }: ChangedFileCardProps) {
           {buttonLabel}
         </button>
       </div>
+
+      <dl className="changed-file-stats">
+        <div>
+          <dt>Additions</dt>
+          <dd className="additions-count">+{file.additions}</dd>
+        </div>
+        <div>
+          <dt>Deletions</dt>
+          <dd className="deletions-count">-{file.deletions}</dd>
+        </div>
+        <div>
+          <dt>Total changes</dt>
+          <dd>{file.changes}</dd>
+        </div>
+      </dl>
 
       {isExpanded ? <DiffPreview patch={file.patch} /> : null}
     </article>
