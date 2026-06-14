@@ -1,11 +1,15 @@
-import type { ClassifiedChangedFile } from "../types/app";
+import type { CategoryFilter, ClassifiedChangedFile } from "../types/app";
 import { ChangedFileCard } from "./ChangedFileCard";
 
 interface ChangedFileListProps {
   files: ClassifiedChangedFile[];
+  selectedCategory: CategoryFilter;
 }
 
-export function ChangedFileList({ files }: ChangedFileListProps) {
+export function ChangedFileList({
+  files,
+  selectedCategory,
+}: ChangedFileListProps) {
   return (
     <section className="changed-files" aria-labelledby="changed-files-title">
       <div className="section-heading">
@@ -13,11 +17,17 @@ export function ChangedFileList({ files }: ChangedFileListProps) {
         <p>Expand a file to inspect its diff preview.</p>
       </div>
 
-      <div className="changed-file-list">
-        {files.map((file) => (
-          <ChangedFileCard file={file} key={file.filename} />
-        ))}
-      </div>
+      {files.length > 0 ? (
+        <div className="changed-file-list">
+          {files.map((file) => (
+            <ChangedFileCard file={file} key={file.filename} />
+          ))}
+        </div>
+      ) : (
+        <p className="empty-file-filter">
+          No changed files match the {selectedCategory} filter.
+        </p>
+      )}
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { CommitForm } from "./components/CommitForm";
 import { CommitOverview } from "./components/CommitOverview";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { FileCategorySummary } from "./components/FileCategorySummary";
+import { FileFilterBar } from "./components/FileFilterBar";
 import { LoadingState } from "./components/LoadingState";
 import { RuleBasedSummary } from "./components/RuleBasedSummary";
 import {
@@ -13,6 +14,7 @@ import {
 } from "./services/githubApi";
 import type {
   AppError,
+  CategoryFilter,
   ClassifiedChangedFile,
   ParsedGitHubInput,
 } from "./types/app";
@@ -39,6 +41,8 @@ function App() {
   const [commitInput, setCommitInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryFilter>("All");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
   );
@@ -60,6 +64,19 @@ function App() {
       categoryCounts,
     });
   }, [analysisResult, categoryCounts]);
+  const filteredFiles = useMemo(() => {
+    if (!analysisResult) {
+      return [];
+    }
+
+    if (selectedCategory === "All") {
+      return analysisResult.classifiedFiles;
+    }
+
+    return analysisResult.classifiedFiles.filter(
+      (file) => file.category === selectedCategory,
+    );
+  }, [analysisResult, selectedCategory]);
 
   async function handleAnalyzeCommit() {
     const result = parseGitHubInput(repoInput, commitInput);
@@ -72,6 +89,7 @@ function App() {
 
     setError(null);
     setAnalysisResult(null);
+    setSelectedCategory("All");
     setIsLoading(true);
 
     try {
@@ -170,7 +188,14 @@ function App() {
             {categoryCounts ? (
               <FileCategorySummary categoryCounts={categoryCounts} />
             ) : null}
-            <ChangedFileList files={analysisResult.classifiedFiles} />
+            <FileFilterBar
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+            <ChangedFileList
+              files={filteredFiles}
+              selectedCategory={selectedCategory}
+            />
           </>
         ) : null}
       </section>

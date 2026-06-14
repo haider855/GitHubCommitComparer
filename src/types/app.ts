@@ -14,6 +14,8 @@ export const FILE_CATEGORIES = [
 
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 
+export type CategoryFilter = FileCategory | "All";
+
 export type CategoryCounts = Record<FileCategory, number>;
 
 export interface ParsedGitHubInput {
