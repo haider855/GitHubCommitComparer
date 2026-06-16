@@ -1,12 +1,8 @@
-interface LoadingStateProps {
-  message: string;
-}
-
-export function LoadingState({ message }: LoadingStateProps) {
+export function LoadingState() {
   return (
-    <div className="feedback-panel loading-panel" aria-live="polite">
-      <h3>Loading</h3>
-      <p>{message}</p>
+    <div className="loading-state" aria-live="polite">
+      <div className="spinner" />
+      <div className="loading-label">fetching commit data...</div>
     </div>
   );
 }

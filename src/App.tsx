@@ -1,138 +1,107 @@
-import { useMemo, useState } from "react";
-import { ChangedFileList } from "./components/ChangedFileList";
-import { CommitForm } from "./components/CommitForm";
+import { useState } from "react";
+import { Banner } from "./components/Banner";
+import { CategorySummaryGrid } from "./components/CategorySummaryGrid";
 import { CommitOverview } from "./components/CommitOverview";
-import { ErrorMessage } from "./components/ErrorMessage";
-import { FileCategorySummary } from "./components/FileCategorySummary";
-import { FileFilterBar } from "./components/FileFilterBar";
+import { EmptyState } from "./components/EmptyState";
+import { FileList } from "./components/FileList";
+import { FilterBar } from "./components/FilterBar";
+import { InputPanel } from "./components/InputPanel";
 import { LoadingState } from "./components/LoadingState";
-import { RuleBasedSummary } from "./components/RuleBasedSummary";
+import { TopBar } from "./components/TopBar";
 import {
   compareCommits,
   getCommit,
   GitHubApiError,
 } from "./services/githubApi";
-import type {
-  AppError,
-  CategoryFilter,
-  ClassifiedChangedFile,
-  ParsedGitHubInput,
-} from "./types/app";
-import type {
-  GitHubCommitResponse,
-  GitHubCompareResponse,
-} from "./types/github";
+import type { AppState, BannerState, CommitResult } from "./types/app";
+import { buildCommitResult } from "./utils/buildCommitResult";
 import { classifyFile } from "./utils/classifyFile";
-import { countFileCategories } from "./utils/countFileCategories";
 import { parseGitHubInput } from "./utils/parseGitHubInput";
-import { summarizeCommit } from "./utils/summarizeCommit";
 import "./App.css";
 
-interface AnalysisResult {
-  parsedInput: ParsedGitHubInput;
-  commitData: GitHubCommitResponse;
-  compareData: GitHubCompareResponse;
-  classifiedFiles: ClassifiedChangedFile[];
-  parentSha: string;
-}
-
 function App() {
-  const [repoInput, setRepoInput] = useState("");
-  const [commitInput, setCommitInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<AppError | null>(null);
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>("All");
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
-    null,
-  );
-  const categoryCounts = useMemo(
-    () =>
-      analysisResult
-        ? countFileCategories(analysisResult.classifiedFiles)
-        : null,
-    [analysisResult],
-  );
-  const summaryText = useMemo(() => {
-    if (!analysisResult || !categoryCounts) {
-      return null;
-    }
+  const [repo, setRepo] = useState("");
+  const [sha, setSha] = useState("");
+  const [appState, setAppState] = useState<AppState>("idle");
+  const [result, setResult] = useState<CommitResult | null>(null);
+  const [banner, setBanner] = useState<BannerState | null>(null);
+  const [activeFilter, setActiveFilter] = useState("all");
 
-    return summarizeCommit({
-      commitMessage: analysisResult.commitData.commit.message,
-      files: analysisResult.classifiedFiles,
-      categoryCounts,
-    });
-  }, [analysisResult, categoryCounts]);
-  const filteredFiles = useMemo(() => {
-    if (!analysisResult) {
-      return [];
-    }
-
-    if (selectedCategory === "All") {
-      return analysisResult.classifiedFiles;
-    }
-
-    return analysisResult.classifiedFiles.filter(
-      (file) => file.category === selectedCategory,
-    );
-  }, [analysisResult, selectedCategory]);
-
-  async function handleAnalyzeCommit() {
-    const result = parseGitHubInput(repoInput, commitInput);
-
-    if (!result.ok) {
-      setError(result.error);
-      setAnalysisResult(null);
+  async function handleSubmit() {
+    if (!repo.trim()) {
+      setBanner({
+        variant: "error",
+        message:
+          "Repository is required. Enter owner/repo or a full GitHub URL.",
+      });
+      setAppState("error");
       return;
     }
 
-    setError(null);
-    setAnalysisResult(null);
-    setSelectedCategory("All");
-    setIsLoading(true);
+    if (!sha.trim()) {
+      setBanner({
+        variant: "error",
+        message: "Commit SHA or URL is required.",
+      });
+      setAppState("error");
+      return;
+    }
+
+    const parsedInput = parseGitHubInput(repo, sha);
+
+    if (!parsedInput.ok) {
+      setBanner({
+        variant: "error",
+        message: parsedInput.error.message,
+      });
+      setAppState("error");
+      return;
+    }
+
+    setAppState("loading");
+    setBanner(null);
 
     try {
       const commitData = await getCommit(
-        result.value.owner,
-        result.value.repo,
-        result.value.commitSha,
+        parsedInput.value.owner,
+        parsedInput.value.repo,
+        parsedInput.value.commitSha,
       );
-
       const parents = commitData.parents ?? [];
 
       if (parents.length === 0) {
-        setError({
-          title: "Root commit not supported",
-          message:
-            "This commit has no parent commit. There is no previous commit to compare against.",
+        setBanner({
+          variant: "warn",
+          message: "Root commits have no parent to compare against.",
         });
+        setAppState("error");
         return;
       }
 
       if (parents.length > 1) {
-        setError({
-          title: "Merge commit not supported",
-          message:
-            "This commit has multiple parent commits. Merge commit comparison is not supported in the MVP.",
+        setBanner({
+          variant: "warn",
+          message: "Merge commits are not supported. Select a regular commit.",
         });
+        setAppState("error");
         return;
       }
 
       const parentSha = parents[0].sha;
       const compareData = await compareCommits(
-        result.value.owner,
-        result.value.repo,
+        parsedInput.value.owner,
+        parsedInput.value.repo,
         parentSha,
         commitData.sha,
       );
       const changedFiles = compareData.files ?? [];
 
       if (changedFiles.length === 0) {
-        setError({
-          title: "No changed files returned",
+        setBanner({
+          variant: "info",
           message: "No changed files were returned for this commit.",
         });
+        setAppState("error");
         return;
       }
 
@@ -141,107 +110,75 @@ function App() {
         category: classifyFile(file.filename),
       }));
 
-      setAnalysisResult({
-        parsedInput: result.value,
-        commitData,
-        compareData,
-        classifiedFiles,
-        parentSha,
-      });
-    } catch (caughtError) {
-      setError(toAppError(caughtError));
-    } finally {
-      setIsLoading(false);
+      setResult(
+        buildCommitResult({
+          commitData,
+          classifiedFiles,
+          parentSha,
+        }),
+      );
+      setActiveFilter("all");
+      setAppState("success");
+    } catch (error) {
+      setBanner(mapErrorToBanner(error));
+      setAppState("error");
     }
   }
 
+  const showResults =
+    result !== null && (appState === "success" || appState === "error");
+
   return (
-    <main className="app-shell">
-      <section className="hero-panel" aria-labelledby="page-title">
-        <div>
-          <p className="eyebrow">Public GitHub commit analysis</p>
-          <h1 id="page-title">GitHub Commit Comparer</h1>
-          <p className="lede">
-            Enter a repository and commit, then review the parent comparison,
-            changed files, categories, and readable diff previews.
-          </p>
+    <div className="shell">
+      <TopBar />
+      <InputPanel
+        repo={repo}
+        sha={sha}
+        onRepoChange={setRepo}
+        onShaChange={setSha}
+        onSubmit={handleSubmit}
+        loading={appState === "loading"}
+      />
+
+      {banner ? (
+        <Banner variant={banner.variant} message={banner.message} visible />
+      ) : null}
+
+      {appState === "loading" ? <LoadingState /> : null}
+      {appState === "idle" ? <EmptyState /> : null}
+
+      {showResults && result ? (
+        <div className="results">
+          <div className="divider" />
+          <CommitOverview data={result} />
+          <CategorySummaryGrid
+            files={result.files}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+          />
+          <div className="divider" />
+          <FilterBar
+            files={result.files}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+          />
+          <FileList files={result.files} activeFilter={activeFilter} />
         </div>
-      </section>
-
-      <section className="tool-panel" aria-labelledby="form-title">
-        <div className="section-heading">
-          <h2 id="form-title">Analyze a Commit</h2>
-          <p>Fetch a public commit and compare it against its direct parent.</p>
-        </div>
-
-        <CommitForm
-          repoInput={repoInput}
-          commitInput={commitInput}
-          isLoading={isLoading}
-          onRepoInputChange={setRepoInput}
-          onCommitInputChange={setCommitInput}
-          onSubmit={handleAnalyzeCommit}
-        />
-
-        {isLoading ? (
-          <LoadingState message="Fetching commit and parent comparison from GitHub." />
-        ) : null}
-
-        {error ? <ErrorMessage error={error} /> : null}
-
-        {analysisResult ? (
-          <>
-            <CommitOverview
-              commit={analysisResult.commitData}
-              compare={analysisResult.compareData}
-              parentSha={analysisResult.parentSha}
-            />
-            {summaryText ? <RuleBasedSummary summaryText={summaryText} /> : null}
-            {categoryCounts ? (
-              <FileCategorySummary categoryCounts={categoryCounts} />
-            ) : null}
-            <FileFilterBar
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
-            <ChangedFileList
-              files={filteredFiles}
-              selectedCategory={selectedCategory}
-            />
-          </>
-        ) : null}
-      </section>
-
-      <section className="results-grid" aria-label="Result preview sections">
-        <article>
-          <h2>Commit Overview</h2>
-          <p>Metadata, parent SHA, file totals, additions, and deletions.</p>
-        </article>
-
-        <article>
-          <h2>Change Categories</h2>
-          <p>UI, logic, config, dependencies, tests, docs, assets, and tooling.</p>
-        </article>
-
-        <article>
-          <h2>Changed Files</h2>
-          <p>Expandable file cards with status, counts, and diff previews.</p>
-        </article>
-      </section>
-    </main>
+      ) : null}
+    </div>
   );
 }
 
-function toAppError(error: unknown): AppError {
+function mapErrorToBanner(error: unknown): BannerState {
   if (error instanceof GitHubApiError) {
     return {
-      title: error.title,
+      variant: "error",
       message: error.userMessage,
     };
   }
 
   return {
-    title: "Unexpected error",
+    variant: "error",
     message: "Something went wrong while fetching this commit.",
   };
 }

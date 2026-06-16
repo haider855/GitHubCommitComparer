@@ -1,85 +1,60 @@
-import type {
-  GitHubCommitResponse,
-  GitHubCompareResponse,
-} from "../types/github";
+import type { CommitResult } from "../types/app";
 
 interface CommitOverviewProps {
-  commit: GitHubCommitResponse;
-  compare: GitHubCompareResponse;
-  parentSha: string;
+  data: CommitResult;
 }
 
-export function CommitOverview({
-  commit,
-  compare,
-  parentSha,
-}: CommitOverviewProps) {
-  const files = compare.files ?? [];
-  const additions = files.reduce((total, file) => total + file.additions, 0);
-  const deletions = files.reduce((total, file) => total + file.deletions, 0);
-
+export function CommitOverview({ data }: CommitOverviewProps) {
   return (
-    <section className="commit-overview" aria-labelledby="commit-overview-title">
-      <div className="section-heading">
-        <h2 id="commit-overview-title">Commit Overview</h2>
-        <p>Metadata and totals from the parent comparison.</p>
+    <section className="commit-overview">
+      <p className="commit-message">{data.message}</p>
+
+      <div className="meta-chips">
+        <span className="meta-chip">
+          <i className="ti ti-user" aria-hidden="true" />
+          {data.author}
+        </span>
+        <span className="meta-chip">
+          <i className="ti ti-calendar" aria-hidden="true" />
+          {data.date}
+        </span>
+        <span className="meta-chip">
+          <i className="ti ti-git-commit" aria-hidden="true" />
+          {shortSha(data.sha)}
+        </span>
+        <span className="meta-chip">
+          <i className="ti ti-arrow-left" aria-hidden="true" />
+          parent {shortSha(data.parentSha)}
+        </span>
+        <a
+          className="meta-chip meta-link"
+          href={data.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <i className="ti ti-external-link" aria-hidden="true" />
+          view on GitHub
+        </a>
       </div>
 
-      <div className="commit-message">
-        <span>Commit message</span>
-        <p>{commit.commit.message}</p>
-      </div>
-
-      <dl className="commit-details">
-        <div>
-          <dt>Author</dt>
-          <dd>{commit.commit.author.name}</dd>
-        </div>
-        <div>
-          <dt>Date</dt>
-          <dd>{formatCommitDate(commit.commit.author.date)}</dd>
-        </div>
-        <div>
-          <dt>Selected commit SHA</dt>
-          <dd>{commit.sha}</dd>
-        </div>
-        <div>
-          <dt>Parent commit SHA</dt>
-          <dd>{parentSha}</dd>
-        </div>
-        <div>
-          <dt>GitHub commit</dt>
-          <dd>
-            <a
-              className="commit-link"
-              href={commit.html_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open commit
-            </a>
-          </dd>
-        </div>
+      <dl className="stats-row">
         <div>
           <dt>Files changed</dt>
-          <dd>{files.length}</dd>
+          <dd>{data.filesChanged}</dd>
         </div>
         <div>
           <dt>Additions</dt>
-          <dd className="additions-count">+{additions}</dd>
+          <dd className="stat-additions">+{data.additions}</dd>
         </div>
         <div>
           <dt>Deletions</dt>
-          <dd className="deletions-count">-{deletions}</dd>
+          <dd className="stat-deletions">-{data.deletions}</dd>
         </div>
       </dl>
     </section>
   );
 }
 
-function formatCommitDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+function shortSha(sha: string): string {
+  return sha.slice(0, 8);
 }
