@@ -35,6 +35,8 @@ export interface ClassifiedChangedFile extends GitHubCompareFile {
 
 export type AppState = "idle" | "loading" | "error" | "success";
 
+export type AiSummaryStatus = "idle" | "loading" | "success" | "error";
+
 export type BannerVariant = "error" | "warn" | "info";
 
 export interface BannerState {

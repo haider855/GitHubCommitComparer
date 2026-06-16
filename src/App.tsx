@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AiSummaryPanel } from "./components/AiSummaryPanel";
 import { Banner } from "./components/Banner";
 import { CategorySummaryGrid } from "./components/CategorySummaryGrid";
 import { CommitOverview } from "./components/CommitOverview";
@@ -13,7 +14,16 @@ import {
   getCommit,
   GitHubApiError,
 } from "./services/githubApi";
-import type { AppState, BannerState, CommitResult } from "./types/app";
+import {
+  generateAiCommitSummary,
+  OpenAiSummaryError,
+} from "./services/openAiSummary";
+import type {
+  AiSummaryStatus,
+  AppState,
+  BannerState,
+  CommitResult,
+} from "./types/app";
 import { buildCommitResult } from "./utils/buildCommitResult";
 import { classifyFile } from "./utils/classifyFile";
 import { parseGitHubInput } from "./utils/parseGitHubInput";
@@ -26,6 +36,11 @@ function App() {
   const [result, setResult] = useState<CommitResult | null>(null);
   const [banner, setBanner] = useState<BannerState | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [openAiKey, setOpenAiKey] = useState("");
+  const [aiSummary, setAiSummary] = useState("");
+  const [aiSummaryStatus, setAiSummaryStatus] =
+    useState<AiSummaryStatus>("idle");
+  const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (!repo.trim()) {
@@ -118,11 +133,47 @@ function App() {
         }),
       );
       setActiveFilter("all");
+      resetAiSummary();
       setAppState("success");
     } catch (error) {
       setBanner(mapErrorToBanner(error));
       setAppState("error");
     }
+  }
+
+  async function handleGenerateAiSummary() {
+    if (!result) {
+      return;
+    }
+
+    if (!openAiKey.trim()) {
+      setAiSummaryStatus("error");
+      setAiSummaryError("Enter an OpenAI API key to generate an AI summary.");
+      return;
+    }
+
+    setAiSummaryStatus("loading");
+    setAiSummaryError(null);
+
+    try {
+      const summary = await generateAiCommitSummary({
+        apiKey: openAiKey,
+        commit: result,
+      });
+
+      setAiSummary(summary);
+      setAiSummaryStatus("success");
+    } catch (error) {
+      setAiSummary("");
+      setAiSummaryStatus("error");
+      setAiSummaryError(mapAiErrorToMessage(error));
+    }
+  }
+
+  function resetAiSummary() {
+    setAiSummary("");
+    setAiSummaryStatus("idle");
+    setAiSummaryError(null);
   }
 
   const showResults =
@@ -156,6 +207,14 @@ function App() {
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
           />
+          <AiSummaryPanel
+            apiKey={openAiKey}
+            status={aiSummaryStatus}
+            summary={aiSummary}
+            error={aiSummaryError}
+            onApiKeyChange={setOpenAiKey}
+            onGenerate={handleGenerateAiSummary}
+          />
           <div className="divider" />
           <FilterBar
             files={result.files}
@@ -181,6 +240,14 @@ function mapErrorToBanner(error: unknown): BannerState {
     variant: "error",
     message: "Something went wrong while fetching this commit.",
   };
+}
+
+function mapAiErrorToMessage(error: unknown): string {
+  if (error instanceof OpenAiSummaryError) {
+    return error.userMessage;
+  }
+
+  return "Something went wrong while generating the AI summary.";
 }
 
 export default App;
